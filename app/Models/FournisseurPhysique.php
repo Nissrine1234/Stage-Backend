@@ -3,10 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class FournisseurPhysique extends Authenticatable
 {
     use HasFactory;
+
+    protected $table = 'fournisseurs_physiques';
 
     protected $fillable = [
         'user_id',
@@ -27,6 +31,6 @@ class FournisseurPhysique extends Authenticatable
 
     public function genererMotDePasse()
     {
-        return $this->cin . '@2025';
+        return optional($this->user)->cin . '@2025';
     }
 }
