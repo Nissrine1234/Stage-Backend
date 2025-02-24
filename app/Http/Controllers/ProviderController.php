@@ -21,12 +21,12 @@ class ProviderController extends Controller
             'password' => 'required|min:6',
             'telephone' => 'nullable|string',
             'adresse' => 'nullable|string',
-            'type_fournisseur' => 'required|in:morale,physique',
-            'nom_entreprise' => 'required_if:type_fournisseur,morale',
-            'code_postal' => 'required_if:type_fournisseur,morale',
-            'nom' => 'required_if:type_fournisseur,physique',
-            'prenom' => 'required_if:type_fournisseur,physique',
-            'cin' => 'required_if:type_fournisseur,physique'
+            'role_type' => 'required|in:fournisseur_morale,fournisseur_physique',
+            'nom_entreprise' => 'required_if:role_type,fournisseur_morale',
+            'code_postal' => 'required_if:role_type,fournisseur_morale',
+            'nom' => 'required_if:role_type,fournisseur_physique',
+            'prenom' => 'required_if:role_type,fournisseur_physique',
+            'cin' => 'required_if:role_type,fournisseur_physique'
         ]);
 
         if ($validator->fails()) {
@@ -39,11 +39,11 @@ class ProviderController extends Controller
             'password' => Hash::make($request->password),
             'adresse' => $request->adresse,
             'telephone' => $request->telephone,
-            'role_type' => 'fournisseur_' . $request->type_fournisseur
+            'role_type' => $request->role_type
         ]);
 
         // Associer le fournisseur à la bonne table
-        if ($request->type_fournisseur === 'morale') {
+        if ($request->role_type === 'morale') {
             FournisseurMorale::create([
                 'user_id' => $user->id,
                 'nom_entreprise' => $request->nom_entreprise,
@@ -76,12 +76,12 @@ class ProviderController extends Controller
             'password' => 'required|min:6',
             'telephone' => 'nullable|string',
             'adresse' => 'nullable|string',
-            'type_fournisseur' => 'required|in:morale,physique',
-            'nom_entreprise' => 'required_if:type_fournisseur,morale',
-            'code_postal' => 'required_if:type_fournisseur,morale',
-            'nom' => 'required_if:type_fournisseur,physique',
-            'prenom' => 'required_if:type_fournisseur,physique',
-            'cin' => 'required_if:type_fournisseur,physique'
+            'role_type' => 'required|in:morale,physique',
+            'nom_entreprise' => 'required_if:role_type,morale',
+            'code_postal' => 'required_if:role_type,morale',
+            'nom' => 'required_if:role_type,physique',
+            'prenom' => 'required_if:role_type,physique',
+            'cin' => 'required_if:role_type,physique'
         ]);
 
         if ($validator->fails()) {
@@ -94,11 +94,11 @@ class ProviderController extends Controller
             'password' => Hash::make($request->password),
             'adresse' => $request->adresse,
             'telephone' => $request->telephone,
-            'role_type' => 'fournisseur_' . $request->type_fournisseur
+            'role_type' => 'fournisseur_' . $request->role_type
         ]);
 
         // Associer le fournisseur à la bonne table
-        if ($request->type_fournisseur === 'morale') {
+        if ($request->role_type === 'morale') {
             FournisseurMorale::create([
                 'user_id' => $user->id,
                 'nom_entreprise' => $request->nom_entreprise,

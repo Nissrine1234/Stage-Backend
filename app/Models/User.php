@@ -21,7 +21,7 @@ class User extends Authenticatable
         'adresse',
         'telephone',
     ];
-
+    // Définir l'association avec le modèle de rôle
     public function role()
     {
         return match ($this->role_type) {
@@ -32,5 +32,39 @@ class User extends Authenticatable
             'service_achat' => $this->hasOne(ServiceAchat::class, 'id', 'role_id'),
             default => null,
         };
+    }
+
+    // Accessor pour ajouter les attributs dynamiquement
+    public function getRoleAttributesAttribute()
+    {
+        if ($this->role_type === 'fournisseur_morale') {
+            $fournisseurMorale = $this->role; // Charge le fournisseur morale lié
+            return [
+                'nom_entreprise' => $fournisseurMorale ? $fournisseurMorale->nom_entreprise : null,
+                'code_postal' => $fournisseurMorale ? $fournisseurMorale->code_postal : null,
+            ];
+        }
+
+        if ($this->role_type === 'fournisseur_physique') {
+            $fournisseurPhysique = $this->role; // Charge le fournisseur physique lié
+            return [
+                'cin' => $fournisseurPhysique ? $fournisseurPhysique->cin : null,
+                'nom' => $fournisseurPhysique ? $fournisseurPhysique->nom : null,
+                'prenom' => $fournisseurPhysique ? $fournisseurPhysique->prenom : null,
+            ];
+        }
+
+        return [];
+    }
+
+    // Méthode toArray pour personnaliser la structure de la réponse JSON
+    public function toArray()
+    {
+        $array = parent::toArray();
+
+        // Ajouter les attributs spécifiques basés sur le rôle
+        $array['details'] = $this->roleAttributes;
+
+        return $array;
     }
 }
