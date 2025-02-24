@@ -15,7 +15,18 @@ class UsersController extends Controller
 
     public function store(Request $request)
     {
-        $user = User::create($request->all());
+        $user = User::create([
+            'email' => $request->email,
+            'password' => bcrypt($request->password),
+            'adresse' => $request->adresse,
+            'telephone' => $request->telephone,
+            'role_type' => $request->role_type,
+            'nom_entreprise' => $request->nom_entreprise,
+            'code_postal' => $request->code_postal,
+            'nom' => $request->nom,
+            'prenom' => $request->prenom,
+            'cin' => $request->cin,
+        ]);
         return response()->json($user, 201);
     }
 

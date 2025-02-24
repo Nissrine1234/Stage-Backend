@@ -14,7 +14,6 @@ use App\Http\Controllers\{
     DemandsController,
     UsersController
 };
-
 // Groupe principal API v1
 Route::prefix('portail')->group(function () {
 
@@ -32,7 +31,6 @@ Route::prefix('portail')->group(function () {
         Route::put('/update/{id}', [ProviderController::class, 'updateProvider'])->middleware('auth:sanctum');
         Route::delete('/delete/{id}', [ProviderController::class, 'deleteProvider'])->middleware('auth:sanctum');
     });
-
 
     Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/admin/fournisseurs/{id}/accept', [AdminController::class, 'acceptFournisseur']);
@@ -100,5 +98,4 @@ Route::prefix('portail')->group(function () {
         Route::put('/{id}', [UsersController::class, 'update']);
         Route::delete('/{id}', [UsersController::class, 'destroy']);
     });
-
 });

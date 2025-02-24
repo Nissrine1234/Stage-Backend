@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\FournisseurMorale;
 use App\Models\FournisseurPhysique;
+use App\Models\FournisseurMoraleService;
+use App\Models\FournisseurPhysiqueService;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
@@ -84,10 +86,37 @@ class ProviderController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
         
-    
-
     }
     
+
+    /**
+ * Liste des fournisseurs en fonction de leur type (morale ou physique)
+ */
+public function listProviders(Request $request)
+{
+    // Vérifier si un type de fournisseur est spécifié dans la requête
+    $typeFournisseur = $request->query('role_type'); // 'morale' ou 'physique'
+
+    if ($typeFournisseur) {
+        // Si un type est précisé, récupérer les fournisseurs de ce type
+        if ($typeFournisseur === 'morale') {
+            $providers = FournisseurMorale::with('user')->get(); // Récupère les fournisseurs moraux
+        } elseif ($typeFournisseur === 'physique') {
+            $providers = FournisseurPhysique::with('user')->get(); // Récupère les fournisseurs physiques
+        } else {
+            return response()->json(['message' => 'Type de fournisseur non valide'], 400);
+        }
+    } else {
+        // Si aucun type n'est précisé, récupérer tous les fournisseurs (morale et physique)
+        $providers = collect([
+            'morale' => FournisseurMorale::with('user')->get(),
+            'physique' => FournisseurPhysique::with('user')->get()
+        ]);
+    }
+
+    return response()->json($providers);
+}
+
 
     /**
      * Création d'un fournisseur par un administrateur
@@ -95,10 +124,10 @@ class ProviderController extends Controller
     public function createProvider(Request $request)
     {
         // Vérifier que l'utilisateur est administrateur
-        if (auth()->user()->role_type !== 'admin') {
-            return response()->json(['message' => 'Accès refusé'], 403);
-        }
-
+        // if (auth()->user()->role_type !== 'admin') {
+        //     return response()->json(['message' => 'Accès refusé'], 403);
+        // }
+    
         $validator = Validator::make($request->all(), [
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:6',
@@ -112,10 +141,11 @@ class ProviderController extends Controller
             'cin' => 'required_if:role_type,physique'
         ]);
 
+    
         if ($validator->fails()) {
             return response()->json($validator->errors(), 400);
         }
-
+    
         // Création de l'utilisateur
         $user = User::create([
             'email' => $request->email,
@@ -130,20 +160,20 @@ class ProviderController extends Controller
             FournisseurMorale::create([
                 'user_id' => $user->id,
                 'nom_entreprise' => $request->nom_entreprise,
-                'code_postal' => $request->code_postal
+                'code_postal' => $request->code_postal,
             ]);
-        } else {
+        } elseif ($request->role_type === 'physique') {
             FournisseurPhysique::create([
                 'user_id' => $user->id,
                 'nom' => $request->nom,
                 'prenom' => $request->prenom,
-                'cin' => $request->cin
+                'cin' => $request->cin,
             ]);
         }
-
+    
         return response()->json(['message' => 'Fournisseur créé avec succès par l\'admin'], 201);
     }
-
+    
     /**
      * Mise à jour des informations d'un fournisseur
      */

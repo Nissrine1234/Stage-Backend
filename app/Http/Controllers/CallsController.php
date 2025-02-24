@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\AppelOffre;
+use App\Models\AppelOffreService;
 use Illuminate\Support\Facades\Validator;
 
 class CallsController extends Controller

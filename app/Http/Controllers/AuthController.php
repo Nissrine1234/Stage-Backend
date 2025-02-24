@@ -11,6 +11,7 @@ use App\Models\FournisseurPhysique;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+
 class AuthController extends Controller
 {
     /**
@@ -37,6 +38,7 @@ class AuthController extends Controller
 
         ]);
         // Vérifier les erreurs de validation
+
         if ($validator->fails()) {
             return response()->json([
                 'message' => 'Validation failed',
@@ -94,7 +96,7 @@ class AuthController extends Controller
             'user' => $user,
             'fournisseur' => $fournisseur,
         ], 201);
-    }
+    } 
 
     /**
      * Connexion d'un utilisateur
