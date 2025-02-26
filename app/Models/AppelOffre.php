@@ -14,5 +14,7 @@ class AppelOffre extends Model
     protected $fillable = [
         'titre',
         'details',
+        'demande_id',
+        'user_id',
     ];
 }

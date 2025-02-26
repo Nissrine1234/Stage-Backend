@@ -6,10 +6,11 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use App\Models\FournisseurMorale;
+use App\Models\DemandeInscription;
 use App\Models\FournisseurPhysique;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
-
+use Illuminate\Support\Str;
 class AuthController extends Controller
 {
     /**
@@ -17,10 +18,14 @@ class AuthController extends Controller
      */
     public function register(Request $request)
     {
+
+
+        \Log::info('Données reçues pour inscription', $request->all());
+
         // Validation des données
         $validator = Validator::make($request->all(), [
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|min:6',
+            'password' => 'nullable|min:6', // Maintenant optionnel 
             'adresse' => 'nullable|string',
             'telephone' => 'nullable|string',
             'role_type' => 'required|in:fournisseur_morale,fournisseur_physique',
@@ -33,12 +38,17 @@ class AuthController extends Controller
         ]);
         // Vérifier les erreurs de validation
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 400);
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 400);
         }
+
+        $plainPassword = Str::random(10);
 
         $user = User::create([
             'email' => $request->email,
-            'password' => Hash::make($request->password),
+            'password' => Hash::make($request->password ?? Str::random(10)), 
             'adresse' => $request->adresse,
             'telephone' => $request->telephone,
             'role_type' => $request->role_type,
@@ -64,6 +74,20 @@ class AuthController extends Controller
 
             // Étape 3 : Mettre à jour role_id de l'utilisateur
         $user->update(['role_id' => $fournisseur->id]);
+        \Log::info('Type fournisseur : ' . ($request->role_type === 'fournisseur_physique' ? 'physique' : 'moral'));
+
+        DemandeInscription::create([
+            'type_fournisseur' => $request->role_type === 'fournisseur_physique' ? 'physique' : 'moral',
+            'email' => $request->email,
+            'telephone' => $request->telephone ?? null,
+            'nom_entreprise' => $request->nom_entreprise ?? null,
+            'code_postal' => $request->code_postal ?? null,
+            'nom' => $request->nom ?? null,
+            'prenom' => $request->prenom ?? null,
+            'cin' => $request->cin ?? null,
+            'date_demande' => now(),
+        ]);
+        
 
         return response()->json([
             'message' => 'Utilisateur créé avec succès',
@@ -82,27 +106,35 @@ class AuthController extends Controller
             'email' => 'required|email',
             'password' => 'required'
         ]);
-
+    
         if ($validator->fails()) {
             return response()->json($validator->errors(), 400);
         }
-
-        // Tentative de connexion
+    
+        // Vérification des identifiants
         if (!Auth::attempt($request->only('email', 'password'))) {
             return response()->json(['message' => 'Identifiants incorrects'], 401);
         }
-
+    
         // Récupérer l'utilisateur connecté
         $user = Auth::user();
+    
+        // Vérifier s'il s'agit bien d'un fournisseur
+        if ($user->role_type !== 'fournisseur_physique') {
+            return response()->json(['message' => 'Accès refusé'], 403);
+        }
+    
+        // Générer le token d'authentification
         $token = $user->createToken('AuthToken')->plainTextToken;
-
+    
         return response()->json([
             'message' => 'Connexion réussie',
             'user' => $user,
             'token' => $token
         ]);
     }
-
+    
+    
     /**
      * Déconnexion de l'utilisateur
      */

@@ -6,10 +6,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasFactory;
+    use HasFactory , HasApiTokens, Notifiable;
 
     protected $table = 'users';
 
@@ -32,6 +33,14 @@ class User extends Authenticatable
             'service_achat' => $this->hasOne(ServiceAchat::class, 'id', 'role_id'),
             default => null,
         };
+    }
+
+
+    public function details()
+    {
+        return $this->role_type === 'fournisseur_physique'
+            ? $this->hasOne(FournisseurPhysique::class, 'user_id')
+            : $this->hasOne(FournisseurMorale::class, 'user_id');
     }
 
     // Accessor pour ajouter les attributs dynamiquement

@@ -33,6 +33,11 @@ Route::prefix('portail')->group(function () {
         Route::delete('/delete/{id}', [ProviderController::class, 'deleteProvider'])->middleware('auth:sanctum');
     });
 
+
+    Route::middleware(['auth:sanctum'])->group(function () {
+        Route::post('/admin/fournisseurs/{id}/accept', [AdminController::class, 'acceptFournisseur']);
+    });
+    
     // ✅ Appels d'Offres
     Route::prefix('calls')->group(function () {
         Route::get('/', [CallsController::class, 'listCalls']);

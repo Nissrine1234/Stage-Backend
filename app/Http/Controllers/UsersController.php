@@ -21,26 +21,28 @@ class UsersController extends Controller
 
     public function show($id)
     {
-        $user = User::with('role')->findOrFail($id);
-
-        // Définir dynamiquement le nom du détail en fonction du rôle
-        $roleDetailsKey = match ($user->role) {
-            'fournisseur_moral' => 'fournisseur_moral_details',
-            'fournisseur_physique' => 'fournisseur_physique_details',
-            'user_metier' => 'user_metier_details',
-            'admin' => 'admin_details',
-            'service_achat' => 'service_achat_details',
-            default => 'details',
+        $user = User::findOrFail($id);
+    
+        // Définir dynamiquement la relation en fonction du role_type
+        $roleDetails = match ($user->role_type) {
+            'fournisseur_morale' => $user->fournisseurMorale,
+            'fournisseur_physique' => $user->fournisseurPhysique,
+            'user_metier' => $user->userMetier,
+            'admin' => $user->admin,
+            'service_achat' => $user->serviceAchat,
+            default => null,
         };
-
+    
         return response()->json([
             'id' => $user->id,
-            'name' => $user->name,
             'email' => $user->email,
-            'role' => $user->role,
-            $roleDetailsKey => $user->role
+            'role_type' => $user->role_type,
+            'telephone' => $user->telephone,
+            'adresse' => $user->adresse,
+            'details' => $roleDetails, // Ajoute les détails du fournisseur
         ]);
     }
+    
 
 
     public function update(Request $request, $id)

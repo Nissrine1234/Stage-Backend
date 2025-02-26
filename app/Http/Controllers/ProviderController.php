@@ -16,6 +16,7 @@ class ProviderController extends Controller
      */
     public function becomeProvider(Request $request)
     {
+        \Log::info('🔍 Données reçues dans becomeProvider:', $request->all());
         $validator = Validator::make($request->all(), [
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:6',
@@ -28,38 +29,65 @@ class ProviderController extends Controller
             'prenom' => 'required_if:role_type,fournisseur_physique',
             'cin' => 'required_if:role_type,fournisseur_physique'
         ]);
-
+    
         if ($validator->fails()) {
             return response()->json($validator->errors(), 400);
         }
+        DB::beginTransaction();
 
+    
         // Création de l'utilisateur
-        $user = User::create([
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'adresse' => $request->adresse,
-            'telephone' => $request->telephone,
-            'role_type' => $request->role_type
-        ]);
+        try {
+            $user = User::create([
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'adresse' => $request->adresse,
+                'telephone' => $request->telephone,
+                'role_type' => $request->role_type
+            ]);
+        
+            if (!$user) {
+                DB::rollBack();
+                return response()->json(['error' => 'Problème lors de l\'inscription'], 500);
+            }
 
-        // Associer le fournisseur à la bonne table
-        if ($request->role_type === 'morale') {
-            FournisseurMorale::create([
+
+                    
+        // Vérification du type de fournisseur
+        if ($request->role_type === 'fournisseur_morale') {
+            $fournisseur = FournisseurMorale::create([
                 'user_id' => $user->id,
                 'nom_entreprise' => $request->nom_entreprise,
                 'code_postal' => $request->code_postal
             ]);
         } else {
-            FournisseurPhysique::create([
+            $fournisseur = FournisseurPhysique::create([
                 'user_id' => $user->id,
                 'nom' => $request->nom,
                 'prenom' => $request->prenom,
                 'cin' => $request->cin
             ]);
         }
+    
+        
+        // Mise à jour du champ role_id dans users
+        $user->update([
+            'role_id' => $fournisseur->id
+        ]);
+        DB::commit(); 
+    
+        return response()->json(['data_received' => $request->all()], 200);
+        dd($user);
+        
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+        
+    
 
-        return response()->json(['message' => 'Fournisseur inscrit avec succès', 'user' => $user], 201);
     }
+    
 
     /**
      * Création d'un fournisseur par un administrateur

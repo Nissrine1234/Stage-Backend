@@ -1,4 +1,5 @@
 <?php
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -11,10 +12,21 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('name');
-            $table->dropColumn('email_verified_at');
-            $table->string('adresse')->nullable();  // Colonne adresse
-            $table->string('telephone')->nullable(); // Colonne téléphone
+            if (Schema::hasColumn('users', 'name')) {
+                $table->dropColumn('name');
+            }
+            
+            if (Schema::hasColumn('users', 'email_verified_at')) {
+                $table->dropColumn('email_verified_at');
+            }
+
+            if (!Schema::hasColumn('users', 'adresse')) {
+                $table->string('adresse')->nullable();
+            }
+
+            if (!Schema::hasColumn('users', 'telephone')) {
+                $table->string('telephone')->nullable();
+            }
         });
     }
 
@@ -24,13 +36,21 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            // Restauration des colonnes supprimées en cas de rollback
-            $table->string('name');
-            $table->timestamp('email_verified_at')->nullable();
+            if (!Schema::hasColumn('users', 'name')) {
+                $table->string('name');
+            }
 
-            // Suppression des nouvelles colonnes ajoutées
-            $table->dropColumn('adresse');
-            $table->dropColumn('telephone');
+            if (!Schema::hasColumn('users', 'email_verified_at')) {
+                $table->timestamp('email_verified_at')->nullable();
+            }
+
+            if (Schema::hasColumn('users', 'adresse')) {
+                $table->dropColumn('adresse');
+            }
+
+            if (Schema::hasColumn('users', 'telephone')) {
+                $table->dropColumn('telephone');
+            }
         });
     }
 };

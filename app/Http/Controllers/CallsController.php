@@ -30,7 +30,8 @@ class CallsController extends Controller
         $validator = Validator::make($request->all(), [
             'titre' => 'required|string|max:255',
             'details' => 'required|string',
-            'dateLimite' => 'required|date|after:today'
+            'dateLimite' => 'required|date|after:today',
+            'demande_id' => 'required|exists:demandes,id'
         ]);
 
         if ($validator->fails()) {
@@ -40,7 +41,9 @@ class CallsController extends Controller
         $appel = AppelOffre::create([
             'titre' => $request->titre,
             'details' => $request->details,
-            'dateLimite' => $request->dateLimite
+            'dateLimite' => $request->dateLimite,
+            'demande_id' => $request->demande_id,
+            'user_id' => Auth::id()
         ]);
 
         return response()->json(['message' => 'Appel d\'offres créé avec succès', 'appel' => $appel], 201);
