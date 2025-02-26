@@ -20,6 +20,13 @@ class Offre extends Model
         'status',
     ];
 
+    public function fournisseur()
+    {
+        return $this->role_type === 'fournisseur_physique'
+            ? $this->hasOne(FournisseurPhysique::class, 'user_id')
+            : $this->hasOne(FournisseurMorale::class, 'user_id');
+    }
+
     public function appelOffre()
     {
         return $this->belongsTo(AppelOffre::class);

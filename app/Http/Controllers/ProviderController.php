@@ -8,6 +8,8 @@ use App\Models\FournisseurMorale;
 use App\Models\FournisseurPhysique;
 use App\Models\FournisseurMoraleService;
 use App\Models\FournisseurPhysiqueService;
+use App\Models\Offre; 
+use App\Models\AppelOffre;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 
@@ -132,24 +134,29 @@ class ProviderController extends Controller
         {
             // Récupérer l'utilisateur connecté
             $user = $request->user();
-
+    
+            // Vérifier si l'utilisateur est un fournisseur
+            if (!$user->fournisseur) {
+                return response()->json(['error' => 'Utilisateur non autorisé'], 403);
+            }
+    
             // Récupérer les données nécessaires
-            $offresEnCours = Offre::where('fournisseur_id', $user->id)
+            $offresEnCours = Offre::where('fournisseur_id', $user->fournisseur->id)
                 ->where('statut', 'en attente')
                 ->count();
-
-            $offresAcceptees = Offre::where('fournisseur_id', $user->id)
+    
+            $offresAcceptees = Offre::where('fournisseur_id', $user->fournisseur->id)
                 ->where('statut', 'acceptée')
                 ->count();
-
-            $offresRefusees = Offre::where('fournisseur_id', $user->id)
+    
+            $offresRefusees = Offre::where('fournisseur_id', $user->fournisseur->id)
                 ->where('statut', 'refusée')
                 ->count();
-
+    
             $appelsOffresRecents = AppelOffre::orderBy('created_at', 'desc')
                 ->take(5)
                 ->get();
-
+    
             // Retourner les données au format JSON
             return response()->json([
                 'offres_en_cours' => $offresEnCours,
@@ -158,6 +165,7 @@ class ProviderController extends Controller
                 'appels_offres_recents' => $appelsOffresRecents,
             ]);
         }
+    
 
 
     /**
