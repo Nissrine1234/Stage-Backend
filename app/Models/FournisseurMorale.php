@@ -30,7 +30,7 @@ class FournisseurMorale extends Authenticatable
 
     public function genererMotDePasse()
     {
-        return optional($this->user)->cin . '@2025';
+        return optional($this->user)->nom_entreprise . '@2025';
     }
 }
 

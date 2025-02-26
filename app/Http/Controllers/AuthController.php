@@ -10,7 +10,6 @@ use App\Models\DemandeInscription;
 use App\Models\FournisseurPhysique;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -46,33 +45,38 @@ class AuthController extends Controller
             ], 400);
         }
 
-        $plainPassword = Str::random(10);
+
+        if ($request->role_type === 'fournisseur_morale') {
+            $password = $request->nom_entreprise . '@2025';
+        } else {
+            $password = $request->cin . '@2025';
+        }
+
 
         $user = User::create([
             'email' => $request->email,
-            'password' => Hash::make($request->password ?? Str::random(10)), 
             'adresse' => $request->adresse,
             'telephone' => $request->telephone,
             'role_type' => $request->role_type,
             'role_id' => null, // Temporairement null
+            'password' => Hash::make($password), // Hash le mot de passe
         ]);
     
         // Étape 2 : Créer le fournisseur avec user_id
-        if ($request->role_type === 'fournisseur_morale') {
+        if ($request->role_type === 'fournisseur_morale') {        
             $fournisseur = FournisseurMorale::create([
                 'nom_entreprise' => $request->nom_entreprise,
                 'code_postal' => $request->code_postal,
                 'user_id' => $user->id, // Associe le fournisseur à l'utilisateur
             ]);
-        } else {
+        } else {        
             $fournisseur = FournisseurPhysique::create([
                 'nom' => $request->nom,  // Ajoute ce champ si nécessaire
                 'prenom' => $request->prenom,  // Ajoute ce champ si nécessaire
                 'cin' => $request->cin,  // Ajoute ce champ si nécessaire
                 'user_id' => $user->id, // Associe le fournisseur à l'utilisateur
             ]);
-        }
-    
+        }        
 
             // Étape 3 : Mettre à jour role_id de l'utilisateur
         $user->update(['role_id' => $fournisseur->id]);
@@ -112,19 +116,29 @@ class AuthController extends Controller
         if ($validator->fails()) {
             return response()->json($validator->errors(), 400);
         }
-    
-        // Vérification des identifiants
-        if (!Auth::attempt($request->only('email', 'password'))) {
+
+        // Récupérer l'utilisateur
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            return response()->json(['message' => 'Identifiants incorrects'], 401);
+        }
+
+        \Log::info('Mot de passe entré : ' . $request->password);
+        \Log::info('Mot de passe stocké : ' . $user->password);
+
+
+
+        // Vérifier le mot de passe
+        if (!Hash::check($request->password, $user->password)) {
             return response()->json(['message' => 'Identifiants incorrects'], 401);
         }
     
-        // Récupérer l'utilisateur connecté
-        $user = Auth::user();
-    
         // Vérifier s'il s'agit bien d'un fournisseur
-        if ($user->role_type !== 'fournisseur_physique') {
+        if (!in_array($user->role_type, ['fournisseur_physique', 'fournisseur_morale'])) {
             return response()->json(['message' => 'Accès refusé'], 403);
         }
+        
     
         // Générer le token d'authentification
         $token = $user->createToken('AuthToken')->plainTextToken;

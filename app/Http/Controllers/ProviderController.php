@@ -37,14 +37,22 @@ class ProviderController extends Controller
         }
         DB::beginTransaction();
 
+
+        if ($request->role_type === 'fournisseur_morale') {
+            $password = $request->nom_entreprise . '@2025';
+        } else {
+            $password = $request->cin . '@2025';
+        }
+
+
     
         // Création de l'utilisateur
         try {
             $user = User::create([
                 'email' => $request->email,
-                'password' => Hash::make($request->password),
                 'adresse' => $request->adresse,
                 'telephone' => $request->telephone,
+                'password' => Hash::make($password), // Hash le mot de passe
                 'role_type' => $request->role_type
             ]);
         
@@ -89,33 +97,67 @@ class ProviderController extends Controller
     }
     
 
-    /**
- * Liste des fournisseurs en fonction de leur type (morale ou physique)
- */
-public function listProviders(Request $request)
-{
-    // Vérifier si un type de fournisseur est spécifié dans la requête
-    $typeFournisseur = $request->query('role_type'); // 'morale' ou 'physique'
+            /**
+         * Liste des fournisseurs en fonction de leur type (morale ou physique)
+         */
+        public function listProviders(Request $request)
+        {
+            // Vérifier si un type de fournisseur est spécifié dans la requête
+            $typeFournisseur = $request->query('role_type'); // 'morale' ou 'physique'
 
-    if ($typeFournisseur) {
-        // Si un type est précisé, récupérer les fournisseurs de ce type
-        if ($typeFournisseur === 'morale') {
-            $providers = FournisseurMorale::with('user')->get(); // Récupère les fournisseurs moraux
-        } elseif ($typeFournisseur === 'physique') {
-            $providers = FournisseurPhysique::with('user')->get(); // Récupère les fournisseurs physiques
-        } else {
-            return response()->json(['message' => 'Type de fournisseur non valide'], 400);
+            if ($typeFournisseur) {
+                // Si un type est précisé, récupérer les fournisseurs de ce type
+                if ($typeFournisseur === 'morale') {
+                    $providers = FournisseurMorale::with('user')->get(); // Récupère les fournisseurs moraux
+                } elseif ($typeFournisseur === 'physique') {
+                    $providers = FournisseurPhysique::with('user')->get(); // Récupère les fournisseurs physiques
+                } else {
+                    return response()->json(['message' => 'Type de fournisseur non valide'], 400);
+                }
+            } else {
+                // Si aucun type n'est précisé, récupérer tous les fournisseurs (morale et physique)
+                $providers = collect([
+                    'morale' => FournisseurMorale::with('user')->get(),
+                    'physique' => FournisseurPhysique::with('user')->get()
+                ]);
+            }
+
+            return response()->json($providers);
         }
-    } else {
-        // Si aucun type n'est précisé, récupérer tous les fournisseurs (morale et physique)
-        $providers = collect([
-            'morale' => FournisseurMorale::with('user')->get(),
-            'physique' => FournisseurPhysique::with('user')->get()
-        ]);
-    }
 
-    return response()->json($providers);
-}
+
+
+
+        public function dashboard(Request $request)
+        {
+            // Récupérer l'utilisateur connecté
+            $user = $request->user();
+
+            // Récupérer les données nécessaires
+            $offresEnCours = Offre::where('fournisseur_id', $user->id)
+                ->where('statut', 'en attente')
+                ->count();
+
+            $offresAcceptees = Offre::where('fournisseur_id', $user->id)
+                ->where('statut', 'acceptée')
+                ->count();
+
+            $offresRefusees = Offre::where('fournisseur_id', $user->id)
+                ->where('statut', 'refusée')
+                ->count();
+
+            $appelsOffresRecents = AppelOffre::orderBy('created_at', 'desc')
+                ->take(5)
+                ->get();
+
+            // Retourner les données au format JSON
+            return response()->json([
+                'offres_en_cours' => $offresEnCours,
+                'offres_acceptees' => $offresAcceptees,
+                'offres_refusees' => $offresRefusees,
+                'appels_offres_recents' => $appelsOffresRecents,
+            ]);
+        }
 
 
     /**

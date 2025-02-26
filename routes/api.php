@@ -28,6 +28,7 @@ Route::prefix('portail')->group(function () {
     Route::prefix('providers')->group(function () {
         Route::post('/become', [ProviderController::class, 'becomeProvider']);
         Route::post('/create', [ProviderController::class, 'createProvider']);
+        Route::get('/dashboard', [ProviderController::class, 'dashboard'])->middleware('auth:sanctum');
         Route::put('/update/{id}', [ProviderController::class, 'updateProvider'])->middleware('auth:sanctum');
         Route::delete('/delete/{id}', [ProviderController::class, 'deleteProvider'])->middleware('auth:sanctum');
     });
